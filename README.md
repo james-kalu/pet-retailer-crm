@@ -120,9 +120,13 @@ This project now supports a standalone desktop build using Electron.
   ```bash
   npm run desktop:dev
   ```
-- Build Mac `.dmg`:
+- Build Mac `.app` bundle:
   ```bash
   npm run desktop:build:mac
+  ```
+- Optional: Build Mac `.dmg` (if needed):
+  ```bash
+  npm run desktop:build:mac:dmg
   ```
 - Run built desktop app locally (without Next dev server):
   ```bash
@@ -136,10 +140,15 @@ This project now supports a standalone desktop build using Electron.
 Build outputs go to `/Users/jameslynn/Documents/New project 2/dist-desktop`.
 The build now runs an `afterPack` hook that ensures Prisma runtime files are copied into the packaged app.
 
-### How standalone DB works
-- During desktop build, `prisma/dev.db` is bundled with the app.
-- On first launch, Electron copies it to the user data directory and sets `DATABASE_URL` to that runtime copy.
-- Your desktop app then reads/writes the local DB without running `npm run dev` or `next start` manually.
+### Synced Desktop Mode
+- Packaged desktop app now launches the hosted app URL directly (cloud sync mode).
+- Default URL is set in `/Users/jameslynn/Documents/New project 2/electron/main.cjs`:
+  - `DEFAULT_REMOTE_URL = "https://pet-retailer-crm-vercel.vercel.app"`
+- You can override while running from terminal with:
+  ```bash
+  DESKTOP_REMOTE_URL="https://your-deployment-url.vercel.app" npm run desktop:start
+  ```
+- In cloud sync mode, phone/browser/desktop all use the same Neon database.
 
 ### Desktop Packaging Notes
 - If you change schema/data before packaging, run:

@@ -19,7 +19,8 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:import:desktop": "node scripts/import-desktop-db-to-neon.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

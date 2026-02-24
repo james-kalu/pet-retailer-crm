@@ -8,6 +8,7 @@ const next = require("next");
 
 const HOST = "127.0.0.1";
 const DEFAULT_PORT = 3710;
+const DEFAULT_REMOTE_URL = "https://pet-retailer-crm-vercel.vercel.app";
 
 const isDev = !app.isPackaged && process.env.ELECTRON_DEV === "1";
 
@@ -50,6 +51,23 @@ function getAppDir() {
   }
 
   return process.cwd();
+}
+
+function getRemoteSyncUrl() {
+  const raw = (process.env.DESKTOP_REMOTE_URL || DEFAULT_REMOTE_URL).trim();
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }
 
 function copySeedDatabaseIfNeeded(appDir) {
@@ -182,6 +200,13 @@ async function createWindow() {
   if (isDev) {
     logLine("Launching in desktop dev mode.");
     await mainWindow.loadURL("http://localhost:3000");
+    return;
+  }
+
+  const remoteUrl = getRemoteSyncUrl();
+  if (remoteUrl) {
+    logLine(`Launching packaged app in cloud sync mode at ${remoteUrl}`);
+    await mainWindow.loadURL(remoteUrl);
     return;
   }
 

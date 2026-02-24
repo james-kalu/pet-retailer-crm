@@ -6,6 +6,7 @@ import {
   completeTaskAction,
   createPlaybookTaskAction,
   createTaskAction,
+  deleteActivityAction,
   deleteRetailerAction,
   snoozeTaskAction,
   updateRetailerQuickAction
@@ -31,6 +32,14 @@ import {
 } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { addDays, asStringArray, formatDate, toDateInputValue } from "@/lib/utils";
+
+function collapsedPreview(summary: string, max = 140): string {
+  const clean = summary.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) {
+    return clean;
+  }
+  return `${clean.slice(0, max)}...`;
+}
 
 export default async function RetailerDetailPage({
   params,
@@ -317,17 +326,49 @@ export default async function RetailerDetailPage({
         <div className="card lg:col-span-2">
           <h2 className="text-lg font-semibold text-slate-900">Activity timeline</h2>
           <div className="mt-4 space-y-3">
-            {retailer.activities.map((activity) => (
-              <div key={activity.id} className="rounded-lg border border-slate-200 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                    {ACTIVITY_LABEL[activity.type as ActivityType]}
-                  </span>
-                  <span className="text-xs text-slate-500">{formatDate(activity.created_at)}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-800">{activity.summary}</p>
-              </div>
-            ))}
+            {retailer.activities.map((activity) => {
+              const isNote = activity.type === "NOTE";
+
+              if (!isNote) {
+                return (
+                  <div key={activity.id} className="rounded-lg border border-slate-200 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        {ACTIVITY_LABEL[activity.type as ActivityType]}
+                      </span>
+                      <span className="text-xs text-slate-500">{formatDate(activity.created_at)}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-800">{activity.summary}</p>
+                  </div>
+                );
+              }
+
+              return (
+                <details key={activity.id} className="rounded-lg border border-slate-200 p-3">
+                  <summary className="cursor-pointer list-none">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                          {ACTIVITY_LABEL[activity.type as ActivityType]}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-700">{collapsedPreview(activity.summary)}</p>
+                      </div>
+                      <span className="text-xs text-slate-500">{formatDate(activity.created_at)}</span>
+                    </div>
+                  </summary>
+                  <div className="mt-3 border-t border-slate-200 pt-3">
+                    <p className="text-sm text-slate-800">{activity.summary}</p>
+                    <form action={deleteActivityAction} className="mt-3">
+                      <input type="hidden" name="activity_id" value={activity.id} />
+                      <input type="hidden" name="retailer_id" value={retailer.id} />
+                      <button type="submit" className="btn-secondary px-2.5 py-1.5 text-xs">
+                        Discard note
+                      </button>
+                    </form>
+                  </div>
+                </details>
+              );
+            })}
             {retailer.activities.length === 0 ? <p className="text-sm text-slate-600">No activity logged yet.</p> : null}
           </div>
         </div>

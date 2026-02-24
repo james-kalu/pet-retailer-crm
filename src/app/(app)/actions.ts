@@ -329,6 +329,36 @@ export async function addActivityAction(formData: FormData) {
   revalidateCorePaths(retailerId);
 }
 
+export async function deleteActivityAction(formData: FormData) {
+  requireAuth();
+
+  const activityId = Number(formData.get("activity_id"));
+  const retailerId = Number(formData.get("retailer_id"));
+
+  if (!activityId || !retailerId) {
+    return;
+  }
+
+  const activity = await prisma.activity.findUnique({
+    where: { id: activityId },
+    select: {
+      id: true,
+      retailer_id: true,
+      type: true
+    }
+  });
+
+  if (!activity || activity.retailer_id !== retailerId || activity.type !== "NOTE") {
+    return;
+  }
+
+  await prisma.activity.delete({
+    where: { id: activity.id }
+  });
+
+  revalidateCorePaths(retailerId);
+}
+
 export async function markDoneAndCreateNextTaskAction(formData: FormData) {
   requireAuth();
 
