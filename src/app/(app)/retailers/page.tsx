@@ -9,9 +9,9 @@ type SortField = "name" | "stage" | "city" | "next_due" | "last_order_date" | "u
 type SortDir = "asc" | "desc";
 
 function parseSavedView(value?: string): SavedViewKey {
-  if (!value) return "today";
+  if (!value) return "all";
   const match = SAVED_VIEWS.find((view) => view.key === value);
-  return match?.key ?? "today";
+  return match?.key ?? "all";
 }
 
 function parseSortField(value?: string): SortField {
