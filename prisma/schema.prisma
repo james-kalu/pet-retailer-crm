@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+model Retailer {
+  id                    Int        @id @default(autoincrement())
+  name                  String
+  address               String?
+  city                  String?
+  region                String?
+  postal_code           String?
+  phone                 String?
+  primary_contact_name  String?
+  primary_contact_email String?
+  primary_contact_phone String?
+  stage                 String     @default("LEAD_IDENTIFIED")
+  tags                  String     @default("[]")
+  products_carried      String     @default("[]")
+  first_order_date      DateTime?
+  last_order_date       DateTime?
+  blocker               String?
+  support_needed        String     @default("[]")
+  notes                 String     @default("")
+  is_at_risk            Boolean    @default(false)
+  created_at            DateTime   @default(now())
+  updated_at            DateTime   @updatedAt
+
+  tasks      Task[]
+  activities Activity[]
+
+  @@index([stage])
+  @@index([last_order_date])
+  @@index([is_at_risk])
+}
+
+model Task {
+  id           Int            @id @default(autoincrement())
+  retailer_id  Int
+  title        String
+  action_type  String
+  due_date     DateTime
+  status       String         @default("OPEN")
+  completed_at DateTime?
+  created_at   DateTime       @default(now())
+
+  retailer Retailer @relation(fields: [retailer_id], references: [id], onDelete: Cascade)
+
+  @@index([retailer_id])
+  @@index([due_date])
+  @@index([status])
+}
+
+model Activity {
+  id          Int          @id @default(autoincrement())
+  retailer_id Int
+  type        String
+  summary     String
+  created_at  DateTime     @default(now())
+
+  retailer Retailer @relation(fields: [retailer_id], references: [id], onDelete: Cascade)
+
+  @@index([retailer_id])
+  @@index([created_at])
+}

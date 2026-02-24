@@ -1,0 +1,8 @@
+node_modules
+.next
+out
+dist-desktop
+.env
+.env.local
+prisma/dev.db
+prisma/dev.db-journal

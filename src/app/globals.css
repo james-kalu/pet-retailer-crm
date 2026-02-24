@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --crm-bg: #f8f5ee;
+  --crm-bg-soft: #fffaf1;
+  --crm-card: #fffefb;
+  --crm-border: #e6dece;
+  --crm-text: #233126;
+  --crm-muted: #5f6f61;
+  --crm-brand: #345942;
+  --crm-brand-strong: #2b4a36;
+  --crm-focus: #c9dbcf;
+}
+
+body {
+  @apply antialiased;
+  font-family:
+    "Avenir Next",
+    "Avenir",
+    "Segoe UI",
+    "Helvetica Neue",
+    "Noto Sans",
+    sans-serif;
+  color: var(--crm-text);
+  background:
+    radial-gradient(1000px 300px at 15% -10%, #ede4d4 0%, transparent 60%),
+    radial-gradient(700px 250px at 85% -15%, #d9eadf 0%, transparent 60%),
+    linear-gradient(to bottom, var(--crm-bg-soft) 0%, var(--crm-bg) 42%, var(--crm-bg) 100%);
+}
+
+.card {
+  @apply rounded-2xl p-5 shadow-sm;
+  border: 1px solid var(--crm-border);
+  background: linear-gradient(180deg, #fffefb 0%, var(--crm-card) 100%);
+  box-shadow:
+    0 1px 0 rgba(29, 42, 32, 0.05),
+    0 10px 30px rgba(43, 74, 54, 0.04);
+}
+
+.input {
+  @apply w-full rounded-xl border px-3 py-2 text-sm outline-none transition;
+  border-color: var(--crm-border);
+  background: #fffdf8;
+  color: var(--crm-text);
+}
+
+.input::placeholder {
+  color: #809084;
+}
+
+.input:focus {
+  border-color: var(--crm-brand);
+  box-shadow: 0 0 0 3px var(--crm-focus);
+}
+
+.select {
+  @apply w-full rounded-xl border px-3 py-2 text-sm outline-none transition;
+  border-color: var(--crm-border);
+  background: #fffdf8;
+  color: var(--crm-text);
+}
+
+.select:focus {
+  border-color: var(--crm-brand);
+  box-shadow: 0 0 0 3px var(--crm-focus);
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition;
+}
+
+.btn-primary {
+  @apply btn text-white;
+  background: linear-gradient(180deg, #3b644a 0%, var(--crm-brand) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(180deg, #325740 0%, var(--crm-brand-strong) 100%);
+}
+
+.btn-secondary {
+  @apply btn;
+  border: 1px solid var(--crm-border);
+  background: #fffdf8;
+  color: var(--crm-text);
+}
+
+.btn-secondary:hover {
+  background: #f7f1e5;
+}
+
+.btn-danger {
+  @apply btn text-white;
+  background: linear-gradient(180deg, #c8694a 0%, #b85739 100%);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(180deg, #bb5c3f 0%, #a84f34 100%);
+}
