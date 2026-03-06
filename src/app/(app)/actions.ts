@@ -65,6 +65,26 @@ function parseDate(value: FormDataEntryValue | null): Date | null {
   return date;
 }
 
+function parseRescheduleDueDateFromPreset(formData: FormData): Date | null {
+  const preset = formData.get("reschedule_preset");
+
+  if (typeof preset !== "string" || !preset) {
+    return null;
+  }
+
+  if (preset === "custom") {
+    const customDate = parseDate(formData.get("custom_date"));
+    return customDate ? startOfDay(customDate) : null;
+  }
+
+  const days = Number(preset);
+  if (!Number.isFinite(days) || days < 0) {
+    return null;
+  }
+
+  return addDays(startOfDay(), days);
+}
+
 function parseSupportNeeded(values: FormDataEntryValue[]): string[] {
   return values
     .filter((value): value is string => typeof value === "string")
@@ -263,7 +283,6 @@ export async function snoozeTaskAction(formData: FormData) {
 
   const taskId = Number(formData.get("task_id"));
   const retailerId = Number(formData.get("retailer_id"));
-  const snoozeDays = Number(formData.get("days") ?? 2);
 
   if (!taskId) {
     return;
@@ -282,20 +301,26 @@ export async function snoozeTaskAction(formData: FormData) {
     return;
   }
 
+  const presetDueDate = parseRescheduleDueDateFromPreset(formData);
+  const legacyDays = Number(formData.get("days") ?? 2);
   const baseDate = task.due_date ?? new Date();
+  const nextDueDate =
+    presetDueDate ??
+    addDays(baseDate, Number.isFinite(legacyDays) && legacyDays >= 0 ? legacyDays : 2);
 
   await prisma.task.update({
     where: { id: taskId },
     data: {
-      due_date: addDays(baseDate, snoozeDays),
+      due_date: nextDueDate,
       status: "OPEN"
     }
   });
 
+  const dueLabel = nextDueDate.toISOString().slice(0, 10);
   await logRetailerActivity({
     retailer_id: task.retailer_id,
     type: "NOTE",
-    summary: `Task snoozed by ${snoozeDays} days: ${task.title}`
+    summary: `Task rescheduled to ${dueLabel}: ${task.title}`
   });
 
   revalidateCorePaths(retailerId || task.retailer_id);
@@ -381,21 +406,26 @@ export async function markDoneAndCreateNextTaskAction(formData: FormData) {
   const actionType = parseTaskActionType(formData.get("next_action_type"));
   const nextTitle = String(formData.get("next_title") ?? "").trim() || "Next follow-up";
   const dueInDays = Number(formData.get("due_in_days") ?? 7);
+  const presetDueDate = parseRescheduleDueDateFromPreset(formData);
+  const nextDueDate =
+    presetDueDate ??
+    addDays(startOfDay(), Number.isFinite(dueInDays) && dueInDays >= 0 ? dueInDays : 7);
 
   await prisma.task.create({
     data: {
       retailer_id: retailerId,
       title: nextTitle,
       action_type: actionType,
-      due_date: addDays(new Date(), dueInDays),
+      due_date: nextDueDate,
       status: "OPEN"
     }
   });
 
+  const dueLabel = nextDueDate.toISOString().slice(0, 10);
   await logRetailerActivity({
     retailer_id: retailerId,
     type: "NOTE",
-    summary: `Work Queue: next task created (${nextTitle}).`
+    summary: `Work Queue: task completed and next task scheduled for ${dueLabel} (${nextTitle}).`
   });
 
   revalidateCorePaths(retailerId);

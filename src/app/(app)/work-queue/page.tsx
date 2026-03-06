@@ -1,4 +1,4 @@
-import { createTaskAction, markDoneAndCreateNextTaskAction } from "@/app/(app)/actions";
+import { completeTaskAction, createTaskAction, markDoneAndCreateNextTaskAction, snoozeTaskAction } from "@/app/(app)/actions";
 import { StagePill } from "@/components/stage-pill";
 import { TASK_ACTION_LABEL, TASK_ACTION_OPTIONS, type Stage, type TaskActionType } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
@@ -37,6 +37,18 @@ const ACTION_TYPE_ALLOWLIST: readonly TaskActionType[] = [
   "REVIEW_SELL_THROUGH",
   "REORDER_ASK"
 ] as const;
+
+const RESCHEDULE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "1", label: "In 1 day" },
+  { value: "3", label: "In 3 days" },
+  { value: "7", label: "In 1 week" },
+  { value: "14", label: "In 2 weeks" },
+  { value: "21", label: "In 3 weeks" },
+  { value: "30", label: "In 1 month" },
+  { value: "90", label: "In 3 months" },
+  { value: "180", label: "In 6 months" },
+  { value: "custom", label: "Other (pick date)" }
+];
 
 function parseFilter(value?: string): ActionFilter {
   if (!value || value === "ALL") return "ALL";
@@ -79,6 +91,7 @@ export default async function WorkQueuePage({
   const rawQuery = (typeof searchParams.q === "string" ? searchParams.q : "").trim();
   const query = rawQuery.toLowerCase();
   const sort = parseSort(typeof searchParams.sort === "string" ? searchParams.sort : undefined);
+  const defaultRescheduleDate = toDateInputValue(addDays(new Date(), 7));
 
   const tasks = await prisma.task.findMany({
     where: {
@@ -203,20 +216,58 @@ export default async function WorkQueuePage({
                 </div>
               </div>
 
-              <form action={markDoneAndCreateNextTaskAction} className="sm:min-w-64">
-                <input type="hidden" name="task_id" value={task.id} />
-                <input type="hidden" name="retailer_id" value={task.retailer_id} />
-                <input type="hidden" name="next_action_type" value={task.action_type} />
-                <input
-                  type="hidden"
-                  name="next_title"
-                  value={`Follow-up: ${TASK_ACTION_LABEL[task.action_type as TaskActionType]}`}
-                />
-                <input type="hidden" name="due_in_days" value="7" />
-                <button type="submit" className="btn-primary w-full">
-                  Mark done + create next task
-                </button>
-              </form>
+              <div className="space-y-3 sm:min-w-[24rem]">
+                <form action={completeTaskAction}>
+                  <input type="hidden" name="task_id" value={task.id} />
+                  <input type="hidden" name="retailer_id" value={task.retailer_id} />
+                  <button type="submit" className="btn-primary w-full">
+                    Mark done
+                  </button>
+                </form>
+
+                <form action={markDoneAndCreateNextTaskAction} className="rounded-lg border border-slate-200 p-3">
+                  <input type="hidden" name="task_id" value={task.id} />
+                  <input type="hidden" name="retailer_id" value={task.retailer_id} />
+                  <input type="hidden" name="next_action_type" value={task.action_type} />
+                  <input type="hidden" name="next_title" value={task.title} />
+                  <input type="hidden" name="due_in_days" value="7" />
+
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Done now + reschedule next</p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <select name="reschedule_preset" defaultValue="7" className="select">
+                      {RESCHEDULE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input type="date" name="custom_date" className="input" defaultValue={defaultRescheduleDate} />
+                  </div>
+                  <button type="submit" className="btn-secondary mt-2 w-full">
+                    Mark done + create future task
+                  </button>
+                </form>
+
+                <form action={snoozeTaskAction} className="rounded-lg border border-slate-200 p-3">
+                  <input type="hidden" name="task_id" value={task.id} />
+                  <input type="hidden" name="retailer_id" value={task.retailer_id} />
+
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Reschedule only (not done)</p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <select name="reschedule_preset" defaultValue="7" className="select">
+                      {RESCHEDULE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <input type="date" name="custom_date" className="input" defaultValue={defaultRescheduleDate} />
+                  </div>
+                  <button type="submit" className="btn-secondary mt-2 w-full">
+                    Push to later date
+                  </button>
+                </form>
+              </div>
             </div>
           </article>
         ))}
